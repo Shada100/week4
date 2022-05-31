@@ -3,15 +3,52 @@ import { Strategy, ZkIdentity } from "@zk-kit/identity"
 import { generateMerkleProof, Semaphore } from "@zk-kit/protocols"
 import { providers } from "ethers"
 import Head from "next/head"
-import React from "react"
+import React, { useEffect } from "react"
 import styles from "../styles/Home.module.css"
+import { useForm, SubmitHandler, Controller} from "react-hook-form";
+import * as yup from 'yup';
+import{yupResolver} from "@hookform/resolvers/yup"
+import {TextField} from "@material-ui/core"
+
+
+
+
+const userSchema = yup.object().shape({
+    name: yup.string().required(),
+    age: yup.number().required().positive().integer(),
+   address: yup.string().required(),
+});
+
+    
+type Profile = {
+    name : string
+    age : number
+    address : string
+  }
 
 export default function Home() {
     const [logs, setLogs] = React.useState("Connect your wallet and greet!")
+    const [sentGreet, setSentGreet] = React.useState("Your Greeting is here")
+   
+    const {register, control, handleSubmit, watch, formState: { errors }} = useForm<Profile>({
+        resolver: yupResolver(userSchema),
+    });
+
+   
+    const formSubmitHandler: SubmitHandler<Profile> =  (data) => {
+        
+        console.log("Form data is", data)
+    }
+   
+   
+    
+   
+    
+  
 
     async function greet() {
         setLogs("Creating your Semaphore identity...")
-
+        setSentGreet("Hey everyone")
         const provider = (await detectEthereumProvider()) as any
 
         await provider.request({ method: "eth_requestAccounts" })
@@ -27,7 +64,6 @@ export default function Home() {
         const merkleProof = generateMerkleProof(20, BigInt(0), identityCommitments, identityCommitment)
 
         setLogs("Creating your Semaphore proof...")
-
         const greeting = "Hello world"
 
         const witness = Semaphore.genWitness(
@@ -77,7 +113,48 @@ export default function Home() {
                 <div onClick={() => greet()} className={styles.button}>
                     Greet
                 </div>
-            </main>
-        </div>
+                <div>
+                <>
+			    <TextField 
+				type='text' 
+				defaultValue= {sentGreet}
+				variant='outlined'
+				inputProps={
+					{ readOnly: true, }
+				}
+			    />
+		        </>
+                </div>
+                <br></br>
+                <form  onSubmit= {handleSubmit(formSubmitHandler)}>
+                <Controller name= "name" control= {control} 
+                render= {({field}) =>(
+                  <TextField{...field} label = "name" variant = "outlined" error = {!!errors.name}
+                  helperText= { errors.name ? errors.name?.message : ""}
+                />
+                )}
+                />
+                <br />
+                <Controller name= "age" control= {control} 
+                render= {({field}) =>(
+                  <TextField{...field} label = "age" variant = "outlined" error = {!!errors.age}
+                  helperText= { errors.age ? errors.age?.message : ""}
+                />
+                )}
+                />
+                <br />
+                <Controller name= "address" control= {control} 
+                render= {({field}) =>(
+                  <TextField{...field} label = "address" variant = "outlined" error = {!!errors.address}
+                  helperText= { errors.address ? errors.address?.message : ""}
+                />
+                )}
+                />
+                <br />
+                <input type= "submit" value = "Submit" className= {styles.button}/>
+                </form>
+                </main>
+                </div>
     )
 }
+
